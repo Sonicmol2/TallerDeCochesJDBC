@@ -22,6 +22,7 @@ public class TallerPrincipal {
 		try {
 
 			do {
+				System.out.println("JDBC");
 				opcion = Menus.mostrarMenu();
 				tratarMenu(opcion);
 
