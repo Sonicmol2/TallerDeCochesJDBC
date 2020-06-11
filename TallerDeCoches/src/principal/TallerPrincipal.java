@@ -5,25 +5,21 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
 
+import conexionBd.ConectionBDSql;
 import dao.DaoCliente;
 import dao.DaoCoche;
 import dao.DaoRevision;
 
 public class TallerPrincipal {
 
-	private static Scanner teclado = new Scanner(System.in);
 	private static final String PATRON_DNI = "[0-9]{8}[A-Z]";
-	private static final String PATRON_MATRICULA = "[0-9]{4}[A-Z]{3}";
+	private static final String PATRON_MATRICULA = "[0-9]{4}-[A-Z]{3}";
 
 	public static void main(String[] args) {
 
 		int opcion;
 
-		// preguntar si hacer la conexion
 		try {
-			// DaoCliente clienteDAO = DaoCliente.getClienteDao();
-			// DaoCoche cocheDAO = DaoCoche.getCocheDao();
-			// DaoRevision revisionDao = DaoRevision.getRevisionDao();
 
 			do {
 				opcion = Menus.mostrarMenu();
@@ -34,7 +30,11 @@ public class TallerPrincipal {
 		} catch (ClassNotFoundException | SQLException e) {
 			System.out.println(e.getMessage());
 		} finally {
-
+			try {
+				ConectionBDSql.cerrarConexion();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 	}
@@ -71,7 +71,7 @@ public class TallerPrincipal {
 		DaoRevision revisionDao = DaoRevision.getRevisionDao();
 		String textoDescripcion, tipoRevision, matricula, dni, fechaInicio, fechaFinal;
 		int idRevision;
-		double precioRevision;
+		float precioRevision;
 		String fechaDate;
 		boolean esCorrecto = false;
 		boolean existe = false;
@@ -81,19 +81,21 @@ public class TallerPrincipal {
 			case 1:
 				// Alta de revisión
 				System.out.println("Vamos a introduir los datos de la revisión.");
-				fechaDate = ValidacionesEntrada.solicitarCadena("Introduce la fecha de la revision(dd/mm/aaaa): ");
+				fechaDate = ValidacionesEntrada.solicitarCadena("Introduce la fecha de la revision(dd-mm-aaaa): ");
 				textoDescripcion = ValidacionesEntrada.solicitarCadena("Introduce la descripción de la revisión: ");
 				tipoRevision = ValidacionesEntrada
 						.solicitarCadena("Introduce el tipo de revisión(Aceite, ruedas, motor, electronica): ");
-				precioRevision = ponerPrecioRevision(tipoRevision);
+				precioRevision = (float) ponerPrecioRevision(tipoRevision);
 				matricula = ValidacionesEntrada.solicitarCadena("Introduce la matricula del coche de la revisión: ");
 
 				existe = DaoCoche.comprobarCochePorMatricula(matricula);
 
 				if (existe == false) {
-					System.out.println("Error. No hay coche con esa matrícula.");
+					throw new SQLException("Error. No hay coche con esa matrícula.");
 				} else {
 					revisionDao.darAltaRevision(fechaDate, textoDescripcion, precioRevision, tipoRevision, matricula);
+
+					System.out.println("\nRevisión creada correctamente.");
 				}
 
 				break;
@@ -105,7 +107,7 @@ public class TallerPrincipal {
 				fechaFinal = ValidacionesEntrada.solicitarCadena("Introduce la segunda fecha: ");
 
 				// Comproabar el formato PREGUNTAR
-				revisionDao.consultarTodasRevisionesEntreDosFechas(fechaInicio, fechaFinal);
+				consultarTodasRevisionesEntreDosFechas(fechaInicio, fechaFinal, revisionDao);
 
 				break;
 			case 3:
@@ -115,9 +117,9 @@ public class TallerPrincipal {
 				existe = DaoCliente.buscarClientePorDni(dni);
 
 				if (existe == false) {
-					System.out.println("Error. No existe cliente con ese DNI.");
+					throw new SQLException("Error. No existe cliente con ese DNI.");
 				} else {
-					revisionDao.consultarRevisionesDeUnCliente(dni);
+					consultarRevisionesDeUnCliente(dni, revisionDao);
 				}
 
 				break;
@@ -128,9 +130,10 @@ public class TallerPrincipal {
 				existe = DaoCoche.comprobarCochePorMatricula(matricula);
 
 				if (existe) {
-					System.out.println("Error. No hay coche con esa matrícula.");
+					throw new SQLException("Error. No hay coche con esa matrícula.");
 				} else {
-					revisionDao.hacerMediaPrecioRevisionesUnCoche(matricula);
+					// Preguntar como hacer esto
+					hacerMediaPrecioRevisionesUnCoche(matricula, revisionDao);
 				}
 				break;
 			case 5:
@@ -140,17 +143,10 @@ public class TallerPrincipal {
 				existe = DaoCoche.comprobarCochePorMatricula(matricula);
 
 				if (existe == false) {
-					System.out.println("Error. No hay coche con esa matrícula.");
+					throw new SQLException("Error. No hay coche con esa matrícula.");
 				} else {
-					idRevision = ValidacionesEntrada.solicitarNumero("Introduce el id de la revisión a modificar: ");
 
-					existe = revisionDao.comprobarExisteRevisionId(idRevision);
-					if (existe == false) {
-						System.out.println("Error. No hay revisión con ese id.");
-					} else {
-						modificarDatoRevisionDeUnCoche(idRevision);
-
-					}
+					modificarDatoDeUnaRevisionDeUnCoche(matricula, revisionDao);
 
 				}
 
@@ -159,40 +155,32 @@ public class TallerPrincipal {
 				// Borrar la revisión por su id, pero antes buscamos por matricula ese coche
 				// para borrar la revisión
 				matricula = ValidacionesEntrada.solicitarCadena("Introduce la matricula del coche: ");
-				
+
 				existe = DaoCoche.comprobarCochePorMatricula(matricula);
-				
+
 				if (existe == false) {
-					System.out.println("Error. No hay coche con esa matrícula.");
-				}else {
-					
+					throw new SQLException("Error. No hay coche con esa matrícula.");
+				} else {
+
 					ResultSet result;
 					String cadenaSQL = "SELECT * FROM Revision WHERE Matricula_Revisiones = '" + matricula + "'";
-					result = (ResultSet) revisionDao.buscarRevisionesDeUnCocheMatricula(cadenaSQL);
-					
-					//Mostramos la lista de revisiones del coche con esa matricula
-					if(!result.next()) {
-						System.out.println("Error. No hay revisiones de ese coche con esa matricula.");
-					}else {
-						while(result.next()) {
-							System.out.println("Revisiones");
-							System.out.println("\tId Revisión: " + result.getInt("idRevision"));
-							System.out.println("\tDescripción: " + result.getInt("Descripcion"));
-							System.out.println("\tFecha: " + result.getInt("Fecha"));
-							System.out.println("\tPrecio Revisión: " + result.getInt("PrecioRevision"));
-							System.out.println("\tTipo Revisión: " + result.getInt("TipoRevision"));
-						}
+					String cadenaResultado;
+					cadenaResultado = revisionDao.buscarRevisionesDeUnCocheMatricula(cadenaSQL);
+
+					// Mostramos la lista de revisiones del coche con esa matricula
+					if (cadenaResultado.isEmpty()) {
+						throw new SQLException("Error. No hay revisiones de ese coche con esa matricula.");
+					} else {
+						System.out.println(cadenaResultado);
 						
-						//Solicitamos el id para borrar
+						// Solicitamos el id para borrar
 						idRevision = ValidacionesEntrada.solicitarNumero("Introduce el id de la revisión a borrar: ");
-						revisionDao.borrarRevisionPorSuId(idRevision);
+						revisionDao.borrarRevisionPorSuId(idRevision, matricula);
 						System.out.println("Borrado correctamente.");
 					}
 
-					
-					
 				}
-				
+
 				break;
 			}
 		} catch (Exception e) {
@@ -201,7 +189,86 @@ public class TallerPrincipal {
 
 	}
 
-	private static void modificarDatoRevisionDeUnCoche(int idRevision) throws SQLException {
+	private static void modificarDatoDeUnaRevisionDeUnCoche(String matricula, DaoRevision revisionDao)
+			throws SQLException {
+
+		int idRevision;
+		boolean existe = false;
+		String cadenaSQL = "SELECT * FROM Revision WHERE Matricula_Revisiones = '" + matricula + "'";
+
+		Statement sentencia = null;
+		ResultSet result;
+		String cadenaResultado;
+
+		cadenaResultado = revisionDao.buscarRevisionesDeUnCocheMatricula(cadenaSQL);
+
+		if (cadenaResultado.isEmpty()) {
+			throw new SQLException("Error. Ese coche no tienes revisiones.");
+		} else {
+			System.out.println(cadenaResultado);
+			
+			idRevision = ValidacionesEntrada.solicitarNumero("Introduce el id de la revisión a modificar: ");
+
+			existe = revisionDao.comprobarExisteRevisionId(idRevision);
+			if (existe == false) {
+				throw new SQLException("Error. No hay revisión con ese id.");
+			} else {
+				modificarDatoRevisionDeUnCoche(idRevision, matricula);
+			}
+
+		}
+
+	}
+
+	private static void hacerMediaPrecioRevisionesUnCoche(String matricula, DaoRevision revisionDao)
+			throws SQLException {
+
+		double media = 0;
+
+		media = revisionDao.hacerMediaPrecioRevisionesUnCoche(matricula);
+		
+		if(media == 0) {
+			throw new SQLException("Coche con matricula '" + matricula + "', no tiene media de revisiones.");
+		}else {
+			System.out.println("Coche con matrícula " + matricula + ", su media de precio de revisiones es: " + media);
+		}
+
+	}
+
+	private static void consultarRevisionesDeUnCliente(String dni, DaoRevision revisionDao) throws SQLException {
+
+		String cadenaResultado;
+		
+		cadenaResultado = revisionDao.consultarRevisionesDeUnCliente(dni);
+		
+		if(cadenaResultado.isEmpty()) {
+			throw new SQLException("Ese cliente no tiene revisiones de ninguno de sus coches.");
+		}else {
+			System.out.println(cadenaResultado);
+		}
+
+		
+
+	}
+
+	private static void consultarTodasRevisionesEntreDosFechas(String fechaInicio, String fechaFinal,
+			DaoRevision revisionDao) throws SQLException {
+
+		String cadenaResultado;
+
+		cadenaResultado = revisionDao.consultarTodasRevisionesEntreDosFechas(fechaInicio, fechaFinal);
+		
+		if(cadenaResultado.isEmpty()) {
+			throw new SQLException("No hay revisiones entre las fechas indicadas.");
+		}else {
+			System.out.println(cadenaResultado);
+		}
+
+		
+
+	}
+
+	private static void modificarDatoRevisionDeUnCoche(int idRevision, String matricula) throws SQLException {
 
 		int opcion;
 		char confirmar;
@@ -209,7 +276,7 @@ public class TallerPrincipal {
 		do {
 			opcion = Menus.mostrarMenuCambiarDatosRevision();
 
-			cambiarDatosRevision(opcion);
+			cambiarDatosRevision(opcion, idRevision, matricula);
 
 			confirmar = ValidacionesEntrada
 					.solicitarConfirmacion("¿Quieres seguir modificando datos de la revisión?(S/N): ");
@@ -217,7 +284,7 @@ public class TallerPrincipal {
 
 	}
 
-	private static void cambiarDatosRevision(int opcion) throws SQLException {
+	private static void cambiarDatosRevision(int opcion, int idRevision, String matricula) throws SQLException {
 
 		String nuevaDescripcion, nuevaTipoRevision;
 		String nuevaFecha;
@@ -226,22 +293,32 @@ public class TallerPrincipal {
 
 		switch (opcion) {
 		case 1:
+			// Preguntar de todas formas si esta bien en el where de la matricula
 			System.out.println("Introduce la nueva fecha.");
-			nuevaFecha = ValidacionesEntrada.solicitarCadena("Introduce la nueva fecha(dd/mm/aaaa) o (dd-mm-aaaa): ");
-			cadenaSQL = "UPDATE Revision set Fecha = '" + nuevaFecha + "'";
+			nuevaFecha = ValidacionesEntrada.solicitarCadena("Introduce la nueva fecha(dd-mm-aaaa): ");
+			cadenaSQL = "UPDATE Revision set Fecha = '" + nuevaFecha + "' WHERE idRevision = " + idRevision
+					+ " AND Matricula_Revisiones = '" + matricula + "'";
 			DaoRevision.modificarDatosRevision(cadenaSQL);
+
+			System.out.println("\nFecha de la revisión del coche modificada correctamente\n");
 			break;
 		case 2:
 			nuevaDescripcion = ValidacionesEntrada.solicitarCadena("Introduce la nueva descripción: ");
-			cadenaSQL = "UPDATE Revision set Descripcion = '" + nuevaDescripcion + "'";
+			cadenaSQL = "UPDATE Revision set Descripcion = '" + nuevaDescripcion + "' WHERE idRevision = " + idRevision
+					+ " AND Matricula_Revisiones = '" + matricula + "'";
 			DaoRevision.modificarDatosRevision(cadenaSQL);
+
+			System.out.println("\nLa descripción de la revisión del coche modificada correctamente\n");
 			break;
 		case 3:
 			nuevaTipoRevision = ValidacionesEntrada.solicitarCadena("Introduce el nuevo tipo de revisión: ");
 			precioNuevo = ponerPrecioRevision(nuevaTipoRevision);
-			cadenaSQL = "UPDATE Revision set TipoRevision = '" + nuevaTipoRevision + "' AND PrecioRevision = "
-					+ precioNuevo;
+			cadenaSQL = "UPDATE Revision set TipoRevision = '" + nuevaTipoRevision + "' , PrecioRevision = "
+					+ precioNuevo + " WHERE idRevision = " + idRevision + " AND Matricula_Revisiones = '" + matricula
+					+ "'";
 			DaoRevision.modificarDatosRevision(cadenaSQL);
+
+			System.out.println("\nTipo de revisión y precio de la revisión del coche modificados correctamente\n");
 			break;
 		}
 
@@ -291,19 +368,21 @@ public class TallerPrincipal {
 				esCorrecto = ValidacionesEntrada.validarMediantePatron(matricula, PATRON_MATRICULA);
 
 				if (esCorrecto == false) {
-					System.out.println("Error. Formato Matricula incorrecto");
+					throw new SQLException("Error. Formato Matricula incorrecto");
 				} else {
 					existe = cocheDAO.comprobarCochePorMatricula(matricula);
 
 					if (existe == true) {
-						System.out.println("Error. Ya existe un vehiculo con esa matrícula.");
+						throw new SQLException("Error. Ya existe un vehiculo con esa matrícula.");
 					} else {
 						existe = clienteDAO.buscarClientePorDni(dniCliente);
 
 						if (existe = false) {
-							System.out.println("Error. No existe ningún cliente con ese DNI.");
+							throw new SQLException("Error. No existe ningún cliente con ese DNI.");
 						} else {
 							cocheDAO.darAltaCoche(marca, modelo, matricula, dniCliente);
+
+							System.out.println("\nCoche creado correctamente.");
 						}
 					}
 
@@ -312,7 +391,7 @@ public class TallerPrincipal {
 				break;
 			case 2:
 				// Consultar todos los coches, ordenados por su matrícula
-				cocheDAO.consultarTodosLosCoches();
+				consultarTodosLosCoches(cocheDAO);
 				break;
 			case 3:
 				// Consultar las revisiones de un coche en concreto, ordenados por la fecha
@@ -324,14 +403,13 @@ public class TallerPrincipal {
 				if (esCorrecto == false) {
 					System.out.println("Error. Formato Matricula incorrecto.");
 				} else {
-					// Preguntar si hacer esto de buscar la matricula o si devuelve el result vacio
-					// tambien se controla
+					
 					existe = cocheDAO.comprobarCochePorMatricula(matricula);
 
 					if (existe == false) {
-						System.out.println("Error. No hay coche con esa matrícula.");
+						throw new SQLException("Error. No hay coche con esa matrícula.");
 					} else {
-						cocheDAO.consultarRevisionesDeUnCoche(matricula);
+						consultarRevisionesDeUnCoche(matricula, cocheDAO);
 					}
 				}
 				break;
@@ -342,11 +420,9 @@ public class TallerPrincipal {
 				esCorrecto = ValidacionesEntrada.validarMediantePatron(dniCliente, PATRON_DNI);
 
 				if (esCorrecto == false) {
-					System.out.println("Error. Formato Matricula incorrecto.");
+					throw new SQLException("Error. Formato Matricula incorrecto.");
 				} else {
-					// Preguntar si hacer esto de buscar la matricula o si devuelve el result vacio
-					// tambien se controla
-					cocheDAO.consultarCochesCliente(dniCliente);
+					consultarCochesCliente(dniCliente, cocheDAO);
 
 				}
 				break;
@@ -358,7 +434,7 @@ public class TallerPrincipal {
 				esCorrecto = ValidacionesEntrada.validarMediantePatron(matricula, PATRON_MATRICULA);
 
 				if (esCorrecto == false) {
-					System.out.println("Error. Formato Matricula incorrecto.");
+					throw new SQLException("Error. Formato Matricula incorrecto.");
 				} else {
 					// Preguntar si hacer esto de buscar la matricula o si devuelve el result vacio
 					// tambien se controla
@@ -366,6 +442,7 @@ public class TallerPrincipal {
 						modificarDatoDeUnCoche(matricula);
 						confirmar = ValidacionesEntrada
 								.solicitarConfirmacion("¿Quieres seguir cambiando datos(S/N)?: ");
+						System.out.println("Se terminó  de modificar.\n");
 					} while (confirmar == 'S');
 
 				}
@@ -378,16 +455,17 @@ public class TallerPrincipal {
 				esCorrecto = ValidacionesEntrada.validarMediantePatron(matricula, PATRON_MATRICULA);
 
 				if (esCorrecto == false) {
-					System.out.println("Error. Formato Matricula incorrecto.");
+					throw new SQLException("Error. Formato Matricula incorrecto.");
 				} else {
-					// Preguntar si hacer esto de buscar la matricula o si devuelve el result vacio
-					// tambien se controla
+					
 					existe = cocheDAO.comprobarCochePorMatricula(matricula);
 
 					if (existe == false) {
-						System.out.println("Error. No existe coche con esa matrícula.");
+						throw new SQLException("Error. No existe coche con esa matrícula.");
 					} else {
 						cocheDAO.borrarCochePorMatricula(matricula);
+
+						System.out.println("\nCoche borrado correctamente.\n");
 					}
 
 				}
@@ -397,6 +475,49 @@ public class TallerPrincipal {
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 		}
+
+	}
+
+	private static void consultarCochesCliente(String dniCliente, DaoCoche cocheDAO) throws SQLException {
+
+		String cadenaResultado;
+
+		cadenaResultado = cocheDAO.consultarCochesCliente(dniCliente);
+		if(cadenaResultado.isEmpty()) {
+			throw new SQLException("El cliente con DNI: " + dniCliente + ", no tiene coches.");
+		}else {
+			System.out.println(cadenaResultado);
+		}
+
+	}
+
+	private static void consultarRevisionesDeUnCoche(String matricula, DaoCoche cocheDAO) throws SQLException {
+
+		String cadenaResultado;
+
+		cadenaResultado = cocheDAO.consultarRevisionesDeUnCoche(matricula);
+		
+		if(cadenaResultado.isEmpty()) {
+			throw new SQLException("Coche con matricula: " + matricula + ", no tiene revisiones aún.");
+		}else {
+			System.out.println(cadenaResultado);
+		}
+	
+	}
+
+	private static void consultarTodosLosCoches(DaoCoche cocheDAO) throws SQLException {
+
+		String cadenaResultado;
+
+		cadenaResultado = cocheDAO.consultarTodosLosCoches();
+		
+		if(cadenaResultado.isEmpty()) {
+			throw new SQLException("Base de datos de los coches vacia.");
+		}else {
+			System.out.println(cadenaResultado);
+		}
+
+		
 
 	}
 
@@ -415,22 +536,25 @@ public class TallerPrincipal {
 		case 1:
 
 			if (existe == false) {
-				System.out.println("Error. No existe coche con esa matrícula.");
+				throw new SQLException("Error. No existe coche con esa matrícula.");
 			} else {
 				marcaNueva = ValidacionesEntrada
 						.solicitarCadena("Introduce la nueva marca del vehículo para modificarla: ");
-				cadenaSQL = "UPDATE Coche set Marca = '" + marcaNueva + "'";
+				cadenaSQL = "UPDATE Coche set Marca = '" + marcaNueva + "' WHERE Matricula = '" + matricula + "'";
 				DaoCoche.modificarDatosCoche(cadenaSQL);
+
+				System.out.println("\nMarca del coche modificada correctamente.\n");
 			}
 			break;
 		case 2:
 			if (existe == false) {
-				System.out.println("Error. No existe coche con esa matrícula.");
+				throw new SQLException("Error. No existe coche con esa matrícula.");
 			} else {
 				modeloNuevo = ValidacionesEntrada
 						.solicitarCadena("Introduce el nuevo modelo del vehículo para modificar: ");
-				cadenaSQL = "UPDATE Coche set Modelo = '" + modeloNuevo + "'";
+				cadenaSQL = "UPDATE Coche set Modelo = '" + modeloNuevo + "' WHERE Matricula = '" + matricula + "'";
 				DaoCoche.modificarDatosCoche(cadenaSQL);
+				System.out.println("\nModelo del coche modificado correctamente.\n");
 			}
 			break;
 		}
@@ -455,14 +579,16 @@ public class TallerPrincipal {
 				correcto = ValidacionesEntrada.validarMediantePatron(dni, PATRON_DNI);
 
 				if (correcto == false) {
-					System.out.println("Error. Formato DNI del cliente incorrecto.");
+					throw new SQLException("Error. Formato DNI del cliente incorrecto.");
 				} else {
 					existe = clienteDAO.buscarClientePorDni(dni);
 
 					if (existe == true) {
-						System.out.println("Error. Ya existe un cliente con ese DNI.");
+						throw new SQLException("Error. Ya existe un cliente con ese DNI.");
 					} else {
 						clienteDAO.nuevoCliente(nombreCliente, apellidosCliente, dni);
+
+						System.out.println("\nCliente creado correctamente.");
 					}
 				}
 
@@ -470,13 +596,15 @@ public class TallerPrincipal {
 
 			case 2:
 				// Consultar todos los clientes
-				clienteDAO.consultarTodosClientes();
+
+				consultarTodosClientes(clienteDAO);
 				break;
 			case 3:
 				// Consultar todos los clientes que contengan un apellido
 				apellidosCliente = ValidacionesEntrada
 						.solicitarCadena("Introduce el apellido del o de los clientes a consultar: ");
-				clienteDAO.consultarClientesPorApellidos(apellidosCliente);
+
+				consultarClientesPorApellidos(apellidosCliente, clienteDAO);
 				break;
 			case 4:
 				// Modificar algun dato del cliente
@@ -484,12 +612,12 @@ public class TallerPrincipal {
 				correcto = ValidacionesEntrada.validarMediantePatron(dni, PATRON_DNI);
 
 				if (correcto == false) {
-					System.out.println("Error. Formato DNI del cliente incorrecto.");
+					throw new SQLException("Error. Formato DNI del cliente incorrecto.");
 				} else {
 					existe = clienteDAO.buscarClientePorDni(dni);
 
-					if (existe == true) {
-						System.out.println("Error. Ya existe un cliente con ese DNI.");
+					if (existe == false) {
+						throw new SQLException("Error. No existe un cliente con ese DNI.");
 					} else {
 						modificarDatosDeCliente(dni);
 					}
@@ -503,20 +631,54 @@ public class TallerPrincipal {
 				correcto = ValidacionesEntrada.validarMediantePatron(dni, PATRON_DNI);
 
 				if (correcto == false) {
-					System.out.println("Error. Formato DNI del cliente incorrecto.");
+					throw new SQLException("Error. Formato DNI del cliente incorrecto.");
 				} else {
 					existe = clienteDAO.buscarClientePorDni(dni);
 
-					if (existe == true) {
-						System.out.println("Error. Ya existe un cliente con ese DNI.");
+					if (existe == false) {
+						throw new SQLException("Error. No existe un cliente con ese DNI.");
 					} else {
 						clienteDAO.borrarCliente(dni);
+
+						System.out.println("\nCliente borrado correctamente.");
 					}
 				}
 				break;
 			}
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
+		}
+
+	}
+
+	private static void consultarClientesPorApellidos(String apellidosCliente, DaoCliente clienteDAO)
+			throws SQLException {
+
+		String resultadoConsulta;
+
+		resultadoConsulta = clienteDAO.consultarClientesPorApellidos(apellidosCliente);
+		
+		if (resultadoConsulta.isEmpty()) {
+			throw new SQLException("Error. Base de datos de coches vacia.");
+		}else {
+			System.out.println(resultadoConsulta);
+		}
+
+
+		
+
+	}
+
+	private static void consultarTodosClientes(DaoCliente clienteDAO) throws SQLException {
+
+		String resultadoConsulta;
+
+		resultadoConsulta = clienteDAO.consultarTodosClientes();
+
+		if (resultadoConsulta.isEmpty()) {
+			throw new SQLException("Error. No hay clientes aún en la base de datos.");
+		} else {
+			System.out.println(resultadoConsulta);
 		}
 
 	}
@@ -535,38 +697,44 @@ public class TallerPrincipal {
 			existe = DaoCliente.buscarClientePorDni(dni);
 
 			if (existe == false) {
-				System.out.println("Error. No hay cliente con ese DNI.");
+				throw new SQLException("Error. No hay cliente con ese DNI.");
 			} else {
 				nombreNuevo = ValidacionesEntrada.solicitarCadena("Introduce el nuevo nombre del cliente: ");
 				cadenaSQL = "UPDATE Cliente set Nombre = '" + nombreNuevo + "' WHERE DNI = '" + dni + "'";
 				// Pasarle aqui la sentencia sql ya con los datos que tiene que modificar
 				DaoCliente.modificarDatosCliente(cadenaSQL);
+
+				System.out.println("\nNombre del cliente modificado correctamente.");
 			}
 			break;
 		case 2:// Pedimos los nuevos apellidos del cliente
 			existe = DaoCliente.buscarClientePorDni(dni);
 
 			if (existe == false) {
-				System.out.println("Error. No hay cliente con ese DNI.");
+				throw new SQLException("Error. No hay cliente con ese DNI.");
 			} else {
 				nuevosApellidos = ValidacionesEntrada.solicitarCadena("Introduce los nuevos apellidos del cliente: ");
 				cadenaSQL = "UPDATE Cliente set Apellidos = '" + nuevosApellidos + "' WHERE DNI = '" + dni + "'";
 				// Pasarle aqui la sentencia sql ya con los datos que tiene que modificar
 				DaoCliente.modificarDatosCliente(cadenaSQL);
+
+				System.out.println("\nApellidos del cliente modificado correctamente.");
 			}
 			break;
 		case 3:
 			existe = DaoCliente.buscarClientePorDni(dni);
 
 			if (existe == false) {
-				System.out.println("Error. No hay cliente con ese DNI.");
+				throw new SQLException("Error. No hay cliente con ese DNI.");
 			} else {
 				nombreNuevo = ValidacionesEntrada.solicitarCadena("Introduce el nuevo nombre del cliente: ");
 				nuevosApellidos = ValidacionesEntrada.solicitarCadena("Introduce los nuevos apellidos del cliente: ");
-				cadenaSQL = "UPDATE Cliente set Nombre = '" + nombreNuevo + "' and Apellidos = '" + nuevosApellidos
+				cadenaSQL = "UPDATE Cliente set Nombre = '" + nombreNuevo + "' , Apellidos = '" + nuevosApellidos
 						+ "' WHERE DNI = '" + dni + "'";
 				// Pasarle aqui la sentencia sql ya con los datos que tiene que modificar
 				DaoCliente.modificarDatosCliente(cadenaSQL);
+
+				System.out.println("\nNombre y apellidos del cliente modificados correctamente.");
 			}
 			break;
 		}

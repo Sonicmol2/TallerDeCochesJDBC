@@ -9,10 +9,11 @@ public class Menus {
 		int opcion = 0;
 
 		do {
-			System.out.println("[1] Cliente");
-			System.out.println("[2] Coche");
-			System.out.println("[3] Revision");
-			System.out.println("[4] Salir");
+			System.out.println("Proyecto JDBC");
+			System.out.println("\t[1] Cliente");
+			System.out.println("\t[2] Coche");
+			System.out.println("\t[3] Revision");
+			System.out.println("\t[4] Salir");
 
 			opcion = Integer.parseInt(teclado.nextLine());
 

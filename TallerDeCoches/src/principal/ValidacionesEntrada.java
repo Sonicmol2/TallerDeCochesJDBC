@@ -76,10 +76,8 @@ public class ValidacionesEntrada {
 
 		char respuesta;
 
-		do {
-			System.out.println(msg);
-			respuesta = teclado.nextLine().charAt(0);
-		} while (respuesta != RESPUESTA_SI || respuesta != RESPUESTA_NO);
+		System.out.println(msg);
+		respuesta = teclado.nextLine().toUpperCase().charAt(0);
 
 		return respuesta;
 	}
@@ -87,14 +85,13 @@ public class ValidacionesEntrada {
 	static boolean validarMediantePatron(String dnicliente, String patron) {
 
 		boolean esCorrecto = false;
-		
-		
-		if(dnicliente.matches(patron)) {
+
+		if (dnicliente.matches(patron)) {
 			esCorrecto = true;
-		}else {
+		} else {
 			esCorrecto = false;
 		}
-		
+
 		return esCorrecto;
 	}
 

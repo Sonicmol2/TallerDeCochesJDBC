@@ -27,107 +27,103 @@ public class DaoRevision {
 		return daoRevision;
 	}
 
-	public void darAltaRevision(String fechaDate, String textoDescripcion, double precioRevision, String tipoRevision,
+	public void darAltaRevision(String fechaDate, String textoDescripcion, float precioRevision, String tipoRevision,
 			String matricula) throws SQLException {
 
-		PreparedStatement sentenciaNuevoCliente;
+		try (PreparedStatement sentenciaNuevoCliente = conexion
+				.prepareStatement("INSERT INTO Revision VALUES (?, ?, ?, ?, ?)");) {
+			sentenciaNuevoCliente.setString(1, textoDescripcion);
+			sentenciaNuevoCliente.setString(2, fechaDate);
+			sentenciaNuevoCliente.setFloat(3, precioRevision);
+			sentenciaNuevoCliente.setString(4, tipoRevision);
+			sentenciaNuevoCliente.setString(5, matricula);
 
-		sentenciaNuevoCliente = conexion.prepareStatement("insert into Revision values (?, ?, ?, ?, ?)");
-
-		// Preguntar como poner el id
-		sentenciaNuevoCliente.setString(2, textoDescripcion);
-		sentenciaNuevoCliente.setString(3, fechaDate);
-		sentenciaNuevoCliente.setDouble(4, precioRevision);
-		sentenciaNuevoCliente.setString(5, tipoRevision);
-		sentenciaNuevoCliente.setString(6, matricula);
-
-		sentenciaNuevoCliente.executeUpdate();
-
-		sentenciaNuevoCliente.close();
-
-		System.out.println("\nRevisión creada correctamente.");
-
-	}
-
-	public void consultarTodasRevisionesEntreDosFechas(String fechaInicio, String fechaFinal) throws SQLException {
-
-		Statement sentencia;
-		ResultSet result;
-
-		String cadenaSQL = "SELECT * FROM Revision WHERE Fecha BETWEEN '" + fechaInicio + "' AND '" + fechaFinal
-				+ "' ORDER BY FECHA DESC";
-
-		sentencia = conexion.createStatement();
-		result = sentencia.executeQuery(cadenaSQL);
-
-		if (!result.next()) {// Preguntar si hacerlo con el try cacth
-			System.out.println("Error. No hay revisiones entre esas fechas.");
-		} else {
-			while (result.next()) {
-				System.out.println("Revisión: ");
-				System.out.println("\tID Revisión: " + result.getString("idRevision"));
-				System.out.println("\tDescripción " + result.getString("Descripcion"));
-				System.out.println("\tFecha: " + result.getString("Fecha"));
-				System.out.println("\tPrecio Revisión: " + result.getString("PrecioRevision"));
-				System.out.println("\tTipo Revisión: " + result.getString("TipoRevision"));
-				System.out.println("\tMatricula pertenece: " + result.getString("Matricula_Revisiones"));
-			}
+			sentenciaNuevoCliente.executeUpdate();
 		}
 
-		// Preguntar si cerrar asi o mediante un try catch
-		result.close();
-		sentencia.close();
 	}
 
-
-	public static void consultarRevisionesDeUnCliente(String dni) throws SQLException {
-
-		String cadenaSQL = "select c.DNI as \"DNI Cliente\", co.Matricula as \"Matricula Coche\", r.idRevision as \"Cod. Revision\", "
-				+ "r.Fecha as \"Fecha Revision\", r.Descripcion as \"Descripción\", r.PrecioRevision as \"Precio Revision\" "
-				+ "from Cliente c inner join Coche co on c.DNI = co.ClientePertenece inner join Revision r on co.Matricula = r.Matricula_Revisiones "
-				+ "where c.DNI = '" + dni + "'";
+	public String consultarTodasRevisionesEntreDosFechas(String fechaInicio, String fechaFinal) throws SQLException {
 
 		Statement sentencia;
 		ResultSet result;
+
+		StringBuilder datos = new StringBuilder();
+
+		String cadenaSQL = "SELECT * FROM Revision WHERE Fecha BETWEEN '" + fechaInicio + "' AND '" + fechaFinal
+				+ "' ORDER BY Fecha DESC";
 
 		sentencia = conexion.createStatement();
 		result = sentencia.executeQuery(cadenaSQL);
 
 		while (result.next()) {
-			System.out.println("Cliente: ");
-			System.out.println("\tDni: " + result.getString("DNI"));
-			System.out.println("\tMatricula: " + result.getString("Matricula"));
-			System.out.println("\tId Revisión: " + result.getString("idRevision"));
-			System.out.println("\tFecha: " + result.getString("Fecha"));
-			System.out.println("\tDescripción: " + result.getString("Descripcion"));
-			System.out.println("\tPrecio Revisión: " + result.getString("PrecioRevision"));
+			datos.append("Revision: \n\tID: " + result.getInt("idRevision") + "\n\tDescripcion: "
+					+ result.getString("Descripcion") + "\n\tFecha: " + result.getString("Fecha")
+					+ "\n\tPrecio Revisión: " + result.getFloat("PrecioRevision") + "\n\tTipo Revisión: "
+					+ result.getString("TipoRevision") + "\n\tMatricula: " + result.getString("Matricula_Revisiones"));
 
 		}
 
-		// Preguntar si cerrar asi o mediante un try catch
 		result.close();
 		sentencia.close();
+
+		return datos.toString();
+
 	}
 
+	public String consultarRevisionesDeUnCliente(String dni) throws SQLException {
 
-	public void hacerMediaPrecioRevisionesUnCoche(String matricula) throws SQLException {
-		
+		String cadenaSQL = "SELECT c.DNI, co.Matricula, r.idRevision, r.Fecha ,r.Descripcion, r.PrecioRevision "
+				+ "FROM Cliente c INNER JOIN Coche co ON c.DNI = co.ClientePertenece INNER JOIN Revision r ON co.Matricula = r.Matricula_Revisiones "
+				+ "WHERE c.DNI = '" + dni + "'";
+
 		Statement sentencia;
 		ResultSet result;
 
-		String cadenaSQL = "SELECT avg(Precio_Revision) FROM Revision r WHERE r.Matricula_Revisiones = '" + matricula + "'";
+		sentencia = conexion.createStatement();
+		result = sentencia.executeQuery(cadenaSQL);
+		StringBuilder datos = new StringBuilder();
 
 		sentencia = conexion.createStatement();
 		result = sentencia.executeQuery(cadenaSQL);
 
-		//PReguntar hacer la media 
-		System.out.println("Coche con matrícula " + matricula + ", su media de precio de revisiones es: " + result.getDouble("media"));
-		
-		// Preguntar si cerrar asi o mediante un try catch
+		while (result.next()) {
+
+			datos.append("Cliente: \n\tDNI: " + result.getString("DNI") + "\n\tCoche: \n\t\tMatricula: "
+					+ result.getString("Matricula") + "\n\t\tRevision con ID: " + result.getString("idRevision")
+					+ "\n\t\tFecha: " + result.getString("Fecha") + "\n\t\tDescripción: "
+					+ result.getString("Descripcion") + "\n\t\tPrecio de la revisión: "
+					+ result.getFloat("PrecioRevision") + "\n");
+
+		}
+
 		result.close();
 		sentencia.close();
-		
-		
+
+		return datos.toString();
+
+	}
+
+	public Float hacerMediaPrecioRevisionesUnCoche(String matricula) throws SQLException {
+
+		Statement sentencia;
+		ResultSet result;
+		Float media;
+
+		String cadenaSQL = "SELECT AVG(PrecioRevision) FROM Revision r WHERE r.Matricula_Revisiones = '" + matricula
+				+ "'";
+
+		sentencia = conexion.createStatement();
+		result = sentencia.executeQuery(cadenaSQL);
+
+		result.next();
+		media = result.getFloat(1);
+
+		result.close();
+		sentencia.close();
+
+		return media;
+
 	}
 
 	public boolean comprobarExisteRevisionId(int idRevision) throws SQLException {
@@ -153,20 +149,21 @@ public class DaoRevision {
 	}
 
 	public static void modificarDatosRevision(String cadenaSQL) throws SQLException {
-		
+
 		Statement sentenciaModificarDatosRevision;
 
 		sentenciaModificarDatosRevision = conexion.createStatement();
 		sentenciaModificarDatosRevision.executeUpdate(cadenaSQL);
 
 		sentenciaModificarDatosRevision.close();
-		
+
 	}
 
-	public void borrarRevisionPorSuId(int idRevision) throws SQLException {
-		
+	public void borrarRevisionPorSuId(int idRevision, String matricula) throws SQLException {
 
-		String cadenaSQL = "DELETE FROM Revision WHERE idRevision = '" + idRevision + "'";
+		// Preguntar si esta bien asi con el where matrícula
+		String cadenaSQL = "DELETE FROM Revision WHERE idRevision = '" + idRevision + "' AND Matricula_Revisiones = '"
+				+ matricula + "'";
 		Statement sentenciaBorrarRevision;
 
 		sentenciaBorrarRevision = conexion.createStatement();
@@ -174,22 +171,31 @@ public class DaoRevision {
 		sentenciaBorrarRevision.executeUpdate(cadenaSQL);
 
 		sentenciaBorrarRevision.close();
-		
+
 	}
 
-	public Object buscarRevisionesDeUnCocheMatricula(String cadenaSQL) throws SQLException {
-		
+	public String buscarRevisionesDeUnCocheMatricula(String cadenaSQL) throws SQLException {
+
 		Statement sentencia;
 		ResultSet result;
-		
+		StringBuilder datos = new StringBuilder();
+
 		sentencia = conexion.createStatement();
 		result = sentencia.executeQuery(cadenaSQL);
-		
-		//Preguntar
+
+		while (result.next()) {
+			datos.append("Revisión: \n\tID: " + result.getInt("idRevision") + "\n\tDescripción: "
+					+ result.getString("Descripcion") + "\n\tFecha: " + result.getString("Fecha")
+					+ "\n\tPrecio revisión: " + result.getFloat("PrecioRevision") + "\n\tTipo revisión: "
+					+ result.getString("TipoRevision") + "\n\tMatricula pertenece: "
+					+ result.getString("Matricula_Revisiones") + "\n");
+		}
+
+		// Preguntar
 		result.close();
 		sentencia.close();
-		
-		return result;
+
+		return datos.toString();
 	}
 
 }

@@ -36,28 +36,27 @@ public class DaoCliente {
 	 */
 
 	// Preguntar si tiene que devolver algo o así esta bien
-	public static void nuevoCliente(String nombreCliente, String apellidosCliente, String dniCliente)
+	public void nuevoCliente(String nombreCliente, String apellidosCliente, String dniCliente)
 			throws SQLException {
 
 		PreparedStatement sentenciaNuevoCliente;
 
 		sentenciaNuevoCliente = conexion.prepareStatement("insert into Cliente values (?, ?, ?)");
 
-		// Preguntar si tiene que tener id para clave primaria
+		// Preguntar si tiene que tener id para clave primaria y desde donde empieza
 		sentenciaNuevoCliente.setString(1, dniCliente);
-		sentenciaNuevoCliente.setString(2, nombreCliente);
-		sentenciaNuevoCliente.setString(3, apellidosCliente);
+		sentenciaNuevoCliente.setString(2, apellidosCliente);
+		sentenciaNuevoCliente.setString(3, nombreCliente);
 
 		sentenciaNuevoCliente.executeUpdate();
 
 		sentenciaNuevoCliente.close();
 
-		System.out.println("\nCliente creado correctamente.");
-
 	}
 
 	/**
 	 * Método para consultar todos los clientes que se llamen iguales
+	 * @param clienteDAO 
 	 * 
 	 * @param nombre de los clientes a buscar
 	 * @return una lista<String> con todos los clientes con ese nombre
@@ -66,64 +65,54 @@ public class DaoCliente {
 
 	// Preguntar si devolver una lista de objetos o lista string o mostrar
 	// directamente
-	public static void consultarClientesPorApellidos(String apellidos) throws SQLException {
+	public  String consultarClientesPorApellidos(String apellidos) throws SQLException {
 
 		Statement sentencia;
 		ResultSet result;
+		StringBuilder datos = new StringBuilder();
 
-		String cadenaSQL = "SELECT * FROM Cliente WHERE Apellidos  LIKE'%" + apellidos + "%'";
+		String cadenaSQL = "SELECT * FROM Cliente WHERE Apellidos LIKE '%" + apellidos + "%';";
 
 		sentencia = conexion.createStatement();
 		result = sentencia.executeQuery(cadenaSQL);
-
-		if (!result.next()) {// Preguntar si hacerlo con el try cacth
-			System.out.println("Error. No hay clientes con ese apellidos en la base de datos.");
-		} else {
-			while (result.next()) {
-				System.out.println("Cliente: ");
-				System.out.println("\tDni: " + result.getString("DNI"));
-				System.out.println("\tNombre: " + result.getString("NOMBRE"));
-				System.out.println("\tApellidos: " + result.getString("APELLIDOS"));
-
-			}
+		
+		while(result.next()) {
+			datos.append("Cliente:\n\tDNI: " + result.getString("DNI") + "\n\tNombre: " + result.getString("Nombre") + "\n\tApellidos: " + result.getString("Apellidos") + "\n\n");
 		}
-
-		// Preguntar si cerrar asi o mediante un try catch
-		result.close();
+		
 		sentencia.close();
+		
+		return datos.toString();
+		
 
 	}
 
 	/**
 	 * Método para consultar todos los clientes
+	 * @param sentencia2 
+	 * @return 
 	 * 
 	 * @return devuelve una lista con todos los clientes
 	 * @throws SQLException
 	 */
-	public static void consultarTodosClientes() throws SQLException {
-
+	public String consultarTodosClientes() throws SQLException {
+		
 		Statement sentencia;
 		ResultSet result;
+		StringBuilder datos = new StringBuilder();
 
 		String cadenaSQL = "SELECT * FROM Cliente";
 
 		sentencia = conexion.createStatement();
 		result = sentencia.executeQuery(cadenaSQL);
-
-		if (!result.next()) {// Preguntar si hacerlo con el try cacth
-			System.out.println("Error. No hay clientes aún en la base de datos.");
-		} else {
-			while (result.next()) {
-				System.out.println("Cliente: ");
-				System.out.println("\tDni: " + result.getString("DNI"));
-				System.out.println("\tNombre: " + result.getString("NOMBRE"));
-				System.out.println("\tApellidos: " + result.getString("APELLIDOS"));
-			}
-
+		
+		while(result.next()) {
+			datos.append("Cliente:\n\tDNI: " + result.getString("DNI") + "\n\tNombre: " + result.getString("Nombre") + "\n\tApellidos: " + result.getString("Apellidos") + "\n\n");
 		}
 
-		result.close();
 		sentencia.close();
+		return datos.toString();
+		
 
 	}
 
@@ -144,7 +133,7 @@ public class DaoCliente {
 	 * @throws SQLException si no lo encuenntra
 	 */
 	// Preguntar si devolver el objeto cliente que ha borradp
-	public static void borrarCliente(String dniCliente) throws SQLException {
+	public void borrarCliente(String dniCliente) throws SQLException {
 
 		String cadenaSQL = "DELETE FROM Cliente WHERE DNI = '" + dniCliente + "'";
 		Statement sentenciaBorrarCliente;

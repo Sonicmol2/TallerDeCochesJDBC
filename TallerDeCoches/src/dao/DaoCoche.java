@@ -41,35 +41,30 @@ public class DaoCoche {
 
 		sentenciaNuevoCoche.close();
 
-		// Preguntar
-		System.out.println("\nCoche creado correctamente.");
 	}
 
-	public static void consultarTodosLosCoches() throws SQLException {
+	public String consultarTodosLosCoches() throws SQLException {
 
 		Statement sentencia;
 		ResultSet result;
+		StringBuilder datos = new StringBuilder();
 
 		String cadenaSQL = "SELECT * FROM Coche ORDER BY Matricula";
 
 		sentencia = conexion.createStatement();
 		result = sentencia.executeQuery(cadenaSQL);
 
-		if (!result.next()) {// Preguntar si hacerlo con el try cacth
-			System.out.println("Error. No hay coches aún en la base de datos.");
-		} else {
-			while (result.next()) {
-				System.out.println("Coche: ");
-				System.out.println("\tMatrícula: " + result.getString("Matricula"));
-				System.out.println("\tMarca: " + result.getString("Marca"));
-				System.out.println("\tModelo: " + result.getString("Modelo"));
-				System.out.println("\tDNI_Pertenece: " + result.getString("ClientePertenece"));
-			}
+		while (result.next()) {
+			datos.append("Coche:\n\tMatrícula: " + result.getString("Matricula") + "\n\tMarca"
+					+ result.getString("Marca") + "\n\tModelo: " + result.getString("Modelo") + "\n\tDNI Pertenece: "
+					+ result.getString("ClientePertenece") + "\n");
 
 		}
 
 		result.close();
 		sentencia.close();
+
+		return datos.toString();
 
 	}
 
@@ -97,75 +92,69 @@ public class DaoCoche {
 
 	}
 
-	public void consultarCochesCliente(String dniCliente) throws SQLException {
+	public String consultarCochesCliente(String dniCliente) throws SQLException {
 
-		Statement sentencia;
 		ResultSet result;
+		Statement sentencia;
+		StringBuilder datos = new StringBuilder();
 
 		String cadenaSQL = "SELECT * FROM Coche WHERE ClientePertenece = '" + dniCliente + "'";
 
 		sentencia = conexion.createStatement();
 		result = sentencia.executeQuery(cadenaSQL);
 
-		if (!result.next()) {// Preguntar si hacerlo con el try cacth
-			System.out.println("Error. Base de datos de coches vacía del cliente con ese DNI.");
-		} else {
-			while (result.next()) {
-				System.out.println("Cliente: ");
-				System.out.println("\tDNI: " + result.getString("ClientePertenece"));
-				System.out.println("\tCoche: ");
-				System.out.println("\t\tMatricula: " + result.getString("Matricula"));
-				System.out.println("\t\tMarca: " + result.getString("Marca"));
-				System.out.println("\t\tModelo: " + result.getString("Modelo"));
-			}
+		while (result.next()) {
+			datos.append("Cliente: \n\tDNI: " + result.getString("ClientePertenece") + "\n\tCoche: \n\t\tMatrícula: "
+					+ result.getString("Matricula") + "\n\t\tMarca: " + result.getString("Marca") + "\n\t\tModelo: "
+					+ result.getString("Modelo") + "\n");
 		}
 
-		// Preguntar si cerrar asi o mediante un try catch
 		result.close();
 		sentencia.close();
+
+		return datos.toString();
+
 	}
 
-	public void consultarRevisionesDeUnCoche(String matricula) throws SQLException {
+	public String consultarRevisionesDeUnCoche(String matricula) throws SQLException {
 
-		Statement sentencia;
 		ResultSet result;
+		Statement sentencia;
+		StringBuilder datos = new StringBuilder();
 
 		String cadenaSQL = "SELECT * FROM Revision r WHERE Matricula_Revisiones = '" + matricula + "' ORDER BY Fecha";
 
 		sentencia = conexion.createStatement();
 		result = sentencia.executeQuery(cadenaSQL);
 
-		if (!result.next()) {// Preguntar si hacerlo con el try cacth
-			System.out.println("Error. Base de datos de revisiones vacía.");
-		} else {
-			while (result.next()) {
-				System.out.println("Coche: ");
-				System.out.println("\tMatricula: " + result.getString("Matricula_Revisiones"));
-				System.out.println("\tID: " + result.getString("idRevision"));
-				System.out.println("\tDescripción: " + result.getString("Descripcion"));
-				System.out.println("\tFecha revisión: " + result.getString("Fecha"));
-				System.out.println("\tPrecio revision: " + result.getString("PrecioRevision"));
-				System.out.println("\tTipo Revision: " + result.getString("TipoRevision"));
-			}
+		while (result.next()) {
+			datos.append("Coche: \n\tMatrícula: " + result.getString("Matricula_Revisiones") + "\nRevisión: \n\tID: "
+					+ result.getInt("idRevision") + "\n\tDescripción: " + result.getString("Descripcion")
+					+ "\n\tFecha de la revisión: " + result.getString("Fecha") + "\n\tPrecio revisión: "
+					+ result.getDouble("PrecioRevision") + "\n\tTipo de revisión: " + result.getString("TipoRevision")
+					+ "\n");
+
 		}
-		// Preguntar si cerrar asi o mediante un try catch
+
 		result.close();
 		sentencia.close();
+
+		return datos.toString();
 	}
 
 	public static void modificarDatosCoche(String cadenaSQL) throws SQLException {
-		
+
 		Statement sentenciaModificarDatosCoche;
 
 		sentenciaModificarDatosCoche = conexion.createStatement();
 		sentenciaModificarDatosCoche.executeUpdate(cadenaSQL);
 
 		sentenciaModificarDatosCoche.close();
-		
+
 	}
 
 	public void borrarCochePorMatricula(String matricula) throws SQLException {
-		
+
 		String cadenaSQL = "DELETE FROM Coche WHERE Matricula = '" + matricula + "'";
 		Statement sentenciaBorrarCoche;
 
@@ -174,7 +163,7 @@ public class DaoCoche {
 		sentenciaBorrarCoche.executeUpdate(cadenaSQL);
 
 		sentenciaBorrarCoche.close();
-		
+
 	}
 
 }
