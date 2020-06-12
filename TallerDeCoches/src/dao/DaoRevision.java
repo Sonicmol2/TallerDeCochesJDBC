@@ -30,9 +30,6 @@ public class DaoRevision {
 	public void darAltaRevision(int codigoRevision, String fechaDate, String textoDescripcion, float precioRevision, String tipoRevision,
 			String matricula) throws SQLException {
 
-		// INSERT INTO Revision (Descripcion, Fecha, PrecioRevision, TipoRevision,
-		// Matricula_Revisiones) VALUES ('sdghdfh', '19-06-2020', 80, 'ruedas',
-		// '1430-CNV');
 
 		try (PreparedStatement sentenciaNuevoRevision = conexion.prepareStatement(
 				"INSERT INTO Revision (CodigoRevision, Descripcion, Fecha, PrecioRevision, TipoRevision, Matricula_Revisiones) VALUES (?, ?, ?, ?, ?, ?);");) {

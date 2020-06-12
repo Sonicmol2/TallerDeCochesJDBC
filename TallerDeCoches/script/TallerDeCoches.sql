@@ -12,17 +12,16 @@ CREATE TABLE Coche(
   Modelo varchar(25) NOT NULL,
   ClientePertenece varchar(15) NOT NULL,
   PRIMARY KEY(Matricula),
-  FOREIGN KEY (ClientePertenece) REFERENCES Cliente(DNI)
+  FOREIGN KEY (ClientePertenece) REFERENCES Cliente(DNI) ON DELETE CASCADE
 );
 
 CREATE TABLE Revision(
-  idRevision int NOT NULL AUTO_INCREMENT,
+  CodigoRevision int,
   Descripcion varchar(255) NOT NULL,
   Fecha varchar(255) NOT NULL,
   PrecioRevision FLOAT,
   TipoRevision varchar(255) NOT NULL,
-  Matricula_Revisiones varchar(10),
-  UNIQUE(idRevision),
-  PRIMARY KEY(idRevision),
-  FOREIGN KEY (Matricula_Revisiones) REFERENCES Coche(Matricula)
+  Matricula_Revisiones varchar(10) NOT NULL,
+  PRIMARY KEY(CodigoRevision),
+  FOREIGN KEY (Matricula_Revisiones) REFERENCES Coche(Matricula) ON DELETE CASCADE
 );
