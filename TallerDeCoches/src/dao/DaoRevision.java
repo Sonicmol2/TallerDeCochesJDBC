@@ -110,8 +110,7 @@ public class DaoRevision {
 		ResultSet result;
 		Float media;
 
-		String cadenaSQL = "SELECT AVG(PrecioRevision) FROM Revision r WHERE r.Matricula_Revisiones = '" + matricula
-				+ "'";
+		String cadenaSQL = "SELECT AVG(PrecioRevision) FROM Revision WHERE Matricula_Revisiones = '" + matricula + "'";
 
 		sentencia = conexion.createStatement();
 		result = sentencia.executeQuery(cadenaSQL);
@@ -174,10 +173,11 @@ public class DaoRevision {
 
 	}
 
-	public String buscarRevisionesDeUnCocheMatricula(String cadenaSQL) throws SQLException {
+	public String buscarRevisionesDeUnCocheMatricula(String matricula) throws SQLException {
 
 		Statement sentencia;
 		ResultSet result;
+		String cadenaSQL = "SELECT * FROM Revision WHERE Matricula_Revisiones = '" + matricula + "'";
 		StringBuilder datos = new StringBuilder();
 
 		sentencia = conexion.createStatement();
@@ -191,7 +191,6 @@ public class DaoRevision {
 					+ result.getString("Matricula_Revisiones") + "\n");
 		}
 
-		// Preguntar
 		result.close();
 		sentencia.close();
 

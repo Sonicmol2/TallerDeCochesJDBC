@@ -36,8 +36,7 @@ public class DaoCliente {
 	 */
 
 	// Preguntar si tiene que devolver algo o así esta bien
-	public void nuevoCliente(String nombreCliente, String apellidosCliente, String dniCliente)
-			throws SQLException {
+	public void nuevoCliente(String nombreCliente, String apellidosCliente, String dniCliente) throws SQLException {
 
 		PreparedStatement sentenciaNuevoCliente;
 
@@ -56,16 +55,17 @@ public class DaoCliente {
 
 	/**
 	 * Método para consultar todos los clientes que se llamen iguales
-	 * @param clienteDAO 
 	 * 
-	 * @param nombre de los clientes a buscar
+	 * @param clienteDAO
+	 * 
+	 * @param nombre     de los clientes a buscar
 	 * @return una lista<String> con todos los clientes con ese nombre
 	 * @throws SQLException
 	 */
 
 	// Preguntar si devolver una lista de objetos o lista string o mostrar
 	// directamente
-	public  String consultarClientesPorApellidos(String apellidos) throws SQLException {
+	public String consultarClientesPorApellidos(String apellidos) throws SQLException {
 
 		Statement sentencia;
 		ResultSet result;
@@ -75,28 +75,29 @@ public class DaoCliente {
 
 		sentencia = conexion.createStatement();
 		result = sentencia.executeQuery(cadenaSQL);
-		
-		while(result.next()) {
-			datos.append("Cliente:\n\tDNI: " + result.getString("DNI") + "\n\tNombre: " + result.getString("Nombre") + "\n\tApellidos: " + result.getString("Apellidos") + "\n\n");
+
+		while (result.next()) {
+			datos.append("Cliente:\n\tDNI: " + result.getString("DNI") + "\n\tNombre: " + result.getString("Nombre")
+					+ "\n\tApellidos: " + result.getString("Apellidos") + "\n\n");
 		}
-		
+
 		sentencia.close();
-		
+
 		return datos.toString();
-		
 
 	}
 
 	/**
 	 * Método para consultar todos los clientes
-	 * @param sentencia2 
-	 * @return 
+	 * 
+	 * @param sentencia2
+	 * @return
 	 * 
 	 * @return devuelve una lista con todos los clientes
 	 * @throws SQLException
 	 */
 	public String consultarTodosClientes() throws SQLException {
-		
+
 		Statement sentencia;
 		ResultSet result;
 		StringBuilder datos = new StringBuilder();
@@ -105,14 +106,14 @@ public class DaoCliente {
 
 		sentencia = conexion.createStatement();
 		result = sentencia.executeQuery(cadenaSQL);
-		
-		while(result.next()) {
-			datos.append("Cliente:\n\tDNI: " + result.getString("DNI") + "\n\tNombre: " + result.getString("Nombre") + "\n\tApellidos: " + result.getString("Apellidos") + "\n\n");
+
+		while (result.next()) {
+			datos.append("Cliente:\n\tDNI: " + result.getString("DNI") + "\n\tNombre: " + result.getString("Nombre")
+					+ "\n\tApellidos: " + result.getString("Apellidos") + "\n\n");
 		}
 
 		sentencia.close();
 		return datos.toString();
-		
 
 	}
 
@@ -176,6 +177,27 @@ public class DaoCliente {
 		sentencia.close();
 
 		return existe;
+	}
+
+	public String consultarClienteDNI(String dni) throws SQLException {
+		StringBuilder datos = new StringBuilder();
+		Statement sentencia;
+		ResultSet result;
+
+		String cadenaSql = "SELECT * FROM Cliente WHERE DNI = '" + dni + "'";
+
+		sentencia = conexion.createStatement();
+		result = sentencia.executeQuery(cadenaSql);
+		
+		while(result.next()) {
+			datos.append("Cliente:\n\tDNI: " + result.getString("DNI") + "\n\tNombre: " + result.getString("Nombre")
+			+ "\n\tApellidos: " + result.getString("Apellidos") + "\n\n");
+		}
+		
+		result.close();
+		sentencia.close();
+		
+		return datos.toString();
 	}
 
 }

@@ -55,7 +55,7 @@ public class DaoCoche {
 		result = sentencia.executeQuery(cadenaSQL);
 
 		while (result.next()) {
-			datos.append("Coche:\n\tMatrícula: " + result.getString("Matricula") + "\n\tMarca"
+			datos.append("Coche:\n\tMatrícula: " + result.getString("Matricula") + "\n\tMarca: "
 					+ result.getString("Marca") + "\n\tModelo: " + result.getString("Modelo") + "\n\tDNI Pertenece: "
 					+ result.getString("ClientePertenece") + "\n");
 
@@ -164,6 +164,26 @@ public class DaoCoche {
 
 		sentenciaBorrarCoche.close();
 
+	}
+
+	public String consultarCocheMatricula(String matricula) throws SQLException {
+		ResultSet result;
+		Statement sentencia;
+		StringBuilder datos = new StringBuilder();
+		
+		String cadenaSql = "SELECT * FROM Coche WHERE Matricula = '" + matricula + "'";
+
+		sentencia = conexion.createStatement();
+		result = sentencia.executeQuery(cadenaSql);
+		
+		while (result.next()) {
+			datos.append("Coche:\n\tMatrícula: " + result.getString("Matricula") + "\n\tMarca: "
+					+ result.getString("Marca") + "\n\tModelo: " + result.getString("Modelo") + "\n\tDNI Pertenece: "
+					+ result.getString("ClientePertenece") + "\n");
+
+		}
+		
+		return datos.toString();
 	}
 
 }
