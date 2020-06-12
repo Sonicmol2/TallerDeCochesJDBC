@@ -41,11 +41,12 @@ public class TallerPrincipal {
 
 	/**
 	 * Método para tratar los menús
+	 * 
 	 * @param opcion elegida del menú principal
-	 * @throws ClassNotFoundException 
+	 * @throws ClassNotFoundException
 	 * @throws SQLException
 	 */
-	private static void tratarMenu(int opcion) throws SQLException, ClassNotFoundException  {
+	private static void tratarMenu(int opcion) throws SQLException, ClassNotFoundException {
 		int opcionCliente, opcionCoche, opcionRevision;
 
 		switch (opcion) {
@@ -75,17 +76,18 @@ public class TallerPrincipal {
 
 	/**
 	 * Método para tratar las opciones del menú de revisiones
-	 * @param opcionRevision elegida 
-	 * @throws SQLException 
+	 * 
+	 * @param opcionRevision elegida
+	 * @throws SQLException
 	 * @throws ClassNotFoundException
 	 */
 	private static void tratarMenuRevision(int opcionRevision) throws SQLException, ClassNotFoundException {
 		DaoRevision revisionDao = DaoRevision.getRevisionDao();
-		String textoDescripcion, tipoRevision, matricula, dni, fechaInicio, fechaFinal;
-		int idRevision;
+		String textoDescripcion, tipoRevision, matricula, dni, fechaInicio, fechaFinal, datosRevision;
+		int codigoRevision;
 		float precioRevision;
 		String fechaDate;
-		boolean esCorrecto = false;
+		char confirmacion;
 		boolean existe = false;
 
 		try {
@@ -93,6 +95,7 @@ public class TallerPrincipal {
 			case 1:
 				// Alta de revisión
 				System.out.println("Vamos a introduir los datos de la revisión.");
+				codigoRevision = ValidacionesEntrada.solicitarNumero("Introduce el codigo de la revisión: ");
 				fechaDate = ValidacionesEntrada.solicitarCadena("Introduce la fecha de la revision(dd-mm-aaaa): ");
 				textoDescripcion = ValidacionesEntrada.solicitarCadena("Introduce la descripción de la revisión: ");
 				tipoRevision = ValidacionesEntrada
@@ -105,7 +108,8 @@ public class TallerPrincipal {
 				if (existe == false) {
 					throw new SQLException("Error. No hay coche con esa matrícula.");
 				} else {
-					revisionDao.darAltaRevision(fechaDate, textoDescripcion, precioRevision, tipoRevision, matricula);
+					revisionDao.darAltaRevision(codigoRevision, fechaDate, textoDescripcion, precioRevision,
+							tipoRevision, matricula);
 
 					System.out.println("\nRevisión creada correctamente.");
 				}
@@ -118,7 +122,6 @@ public class TallerPrincipal {
 				fechaInicio = ValidacionesEntrada.solicitarCadena("Introduce la primera fecha: ");
 				fechaFinal = ValidacionesEntrada.solicitarCadena("Introduce la segunda fecha: ");
 
-				// Comproabar el formato PREGUNTAR
 				consultarTodasRevisionesEntreDosFechas(fechaInicio, fechaFinal, revisionDao);
 
 				break;
@@ -127,6 +130,8 @@ public class TallerPrincipal {
 				dni = ValidacionesEntrada.solicitarCadena("Introduce el dni del cliente: ");
 
 				existe = DaoCliente.buscarClientePorDni(dni);
+
+				System.out.println(dni);
 
 				if (existe == false) {
 					throw new SQLException("Error. No existe cliente con ese DNI.");
@@ -141,10 +146,10 @@ public class TallerPrincipal {
 
 				existe = DaoCoche.comprobarCochePorMatricula(matricula);
 
-				if (existe) {
+				if (existe == false) {
 					throw new SQLException("Error. No hay coche con esa matrícula.");
 				} else {
-					// Preguntar como hacer esto
+
 					hacerMediaPrecioRevisionesUnCoche(matricula, revisionDao);
 				}
 				break;
@@ -159,6 +164,8 @@ public class TallerPrincipal {
 				} else {
 
 					modificarDatoDeUnaRevisionDeUnCoche(matricula, revisionDao);
+					
+					System.out.println("Se terminó de cambiar datos de la revisión.");
 
 				}
 
@@ -184,9 +191,17 @@ public class TallerPrincipal {
 						System.out.println(cadenaResultado);
 
 						// Solicitamos el id para borrar
-						idRevision = ValidacionesEntrada.solicitarNumero("Introduce el id de la revisión a borrar: ");
-						revisionDao.borrarRevisionPorSuId(idRevision, matricula);
-						System.out.println("Borrado correctamente.");
+						codigoRevision = ValidacionesEntrada
+								.solicitarNumero("Introduce el código de la revisión a borrar: ");
+						datosRevision = revisionDao.consultarRevisionPorCodigo(codigoRevision, matricula);
+						confirmacion = ValidacionesEntrada
+								.solicitarConfirmacion("¿Seguro que quieres borrar la revision?: ");
+						if (confirmacion == 'S') {
+							revisionDao.borrarRevisionPorSuCodigo(codigoRevision, matricula);
+							System.out.println(datosRevision);
+							System.out.println("Borrado correctamente.");
+						}
+
 					}
 
 				}
@@ -201,14 +216,16 @@ public class TallerPrincipal {
 
 	/**
 	 * Método para modificar los datos de una revisison
-	 * @param matricula del coche para mostrar las revisiones y modificar
+	 * 
+	 * @param matricula   del coche para mostrar las revisiones y modificar
 	 * @param revisionDao
-	 * @throws SQLException error, si aun no hay revisiones o la matricula incorrecta o no existe el coche
+	 * @throws SQLException error, si aun no hay revisiones o la matricula
+	 *                      incorrecta o no existe el coche
 	 */
 	private static void modificarDatoDeUnaRevisionDeUnCoche(String matricula, DaoRevision revisionDao)
 			throws SQLException {
 
-		int idRevision;
+		int codigoRevision;
 		boolean existe = false;
 
 		String cadenaResultado;
@@ -219,13 +236,13 @@ public class TallerPrincipal {
 		} else {
 			System.out.println(cadenaResultado);
 
-			idRevision = ValidacionesEntrada.solicitarNumero("Introduce el id de la revisión a modificar: ");
+			codigoRevision = ValidacionesEntrada.solicitarNumero("Introduce el codigo de la revisión a modificar: ");
 
-			existe = revisionDao.comprobarExisteRevisionId(idRevision);
+			existe = revisionDao.comprobarExisteRevisionId(codigoRevision);
 			if (existe == false) {
 				throw new SQLException("Error. No hay revisión con ese id.");
 			} else {
-				modificarDatoRevisionDeUnCoche(idRevision, matricula);
+				modificarDatoRevisionDeUnCoche(codigoRevision, matricula);
 			}
 
 		}
@@ -234,9 +251,12 @@ public class TallerPrincipal {
 
 	/**
 	 * Método para hacer la media del precio de revisiones de un coche en concreto
-	 * @param matricula del coche que queremos hacer la media del precio de las revisiones
+	 * 
+	 * @param matricula   del coche que queremos hacer la media del precio de las
+	 *                    revisiones
 	 * @param revisionDao
-	 * @throws SQLException error, si matricula incorrecto, coche no existe o que aún no tiene revisiones ese coche
+	 * @throws SQLException error, si matricula incorrecto, coche no existe o que
+	 *                      aún no tiene revisiones ese coche
 	 */
 	private static void hacerMediaPrecioRevisionesUnCoche(String matricula, DaoRevision revisionDao)
 			throws SQLException {
@@ -255,9 +275,11 @@ public class TallerPrincipal {
 
 	/**
 	 * Método para consultar las revisiones de un cliente
-	 * @param dni del cliente para ver las revisiones que tiene
+	 * 
+	 * @param dni         del cliente para ver las revisiones que tiene
 	 * @param revisionDao
-	 * @throws SQLException error, si dni incorrecto o que el cliente no existe con el dni indicado
+	 * @throws SQLException error, si dni incorrecto o que el cliente no existe con
+	 *                      el dni indicado
 	 */
 	private static void consultarRevisionesDeUnCliente(String dni, DaoRevision revisionDao) throws SQLException {
 
@@ -275,10 +297,12 @@ public class TallerPrincipal {
 
 	/**
 	 * Método para consultar revisiones entre dos fechas indicadas
+	 * 
 	 * @param fechaInicio fecha desde donde empezar a buscar
-	 * @param fechaFinal fecha terminar de buscar
+	 * @param fechaFinal  fecha terminar de buscar
 	 * @param revisionDao
-	 * @throws SQLException error, si no hay revisiones entre las fechas indicadas o fechas introducidas incorrectas
+	 * @throws SQLException error, si no hay revisiones entre las fechas indicadas o
+	 *                      fechas introducidas incorrectas
 	 */
 	private static void consultarTodasRevisionesEntreDosFechas(String fechaInicio, String fechaFinal,
 			DaoRevision revisionDao) throws SQLException {
@@ -297,11 +321,12 @@ public class TallerPrincipal {
 
 	/**
 	 * Método para modificar los datos de una revisión
+	 * 
 	 * @param idRevision revision a modificar
-	 * @param matricula del coche para traer sus revisiones
+	 * @param matricula  del coche para traer sus revisiones
 	 * @throws SQLException error si idRevision incorecto o matricula incorrecta
 	 */
-	private static void modificarDatoRevisionDeUnCoche(int idRevision, String matricula) throws SQLException {
+	private static void modificarDatoRevisionDeUnCoche(int codigoRevision, String matricula) throws SQLException {
 
 		int opcion;
 		char confirmar;
@@ -309,7 +334,7 @@ public class TallerPrincipal {
 		do {
 			opcion = Menus.mostrarMenuCambiarDatosRevision();
 
-			cambiarDatosRevision(opcion, idRevision, matricula);
+			cambiarDatosRevision(opcion, codigoRevision, matricula);
 
 			confirmar = ValidacionesEntrada
 					.solicitarConfirmacion("¿Quieres seguir modificando datos de la revisión?(S/N): ");
@@ -319,12 +344,16 @@ public class TallerPrincipal {
 
 	/**
 	 * Método para cambiar datos de una revisión en concreto
-	 * @param opcion elegida por el usuario para modificar
+	 * 
+	 * @param opcion     elegida por el usuario para modificar
 	 * @param idRevision de la revisón que queremos modificar
-	 * @param matricula del coche, para que traiga las revisiones de ese coche en concreto
-	 * @throws SQLException si la opcion del menú incorrecta, matricula incorrecta o no hay coche con esa matrícula, o idRevision incorrecta o no existe
+	 * @param matricula  del coche, para que traiga las revisiones de ese coche en
+	 *                   concreto
+	 * @throws SQLException si la opcion del menú incorrecta, matricula incorrecta o
+	 *                      no hay coche con esa matrícula, o idRevision incorrecta
+	 *                      o no existe
 	 */
-	private static void cambiarDatosRevision(int opcion, int idRevision, String matricula) throws SQLException {
+	private static void cambiarDatosRevision(int opcion, int codigoRevision, String matricula) throws SQLException {
 
 		String nuevaDescripcion, nuevaTipoRevision;
 		String nuevaFecha;
@@ -336,7 +365,7 @@ public class TallerPrincipal {
 			// Preguntar de todas formas si esta bien en el where de la matricula
 			System.out.println("Introduce la nueva fecha.");
 			nuevaFecha = ValidacionesEntrada.solicitarCadena("Introduce la nueva fecha(dd-mm-aaaa): ");
-			cadenaSQL = "UPDATE Revision set Fecha = '" + nuevaFecha + "' WHERE idRevision = " + idRevision
+			cadenaSQL = "UPDATE Revision set Fecha = '" + nuevaFecha + "' WHERE CodigoRevision = " + codigoRevision
 					+ " AND Matricula_Revisiones = '" + matricula + "'";
 			DaoRevision.modificarDatosRevision(cadenaSQL);
 
@@ -344,8 +373,8 @@ public class TallerPrincipal {
 			break;
 		case 2:
 			nuevaDescripcion = ValidacionesEntrada.solicitarCadena("Introduce la nueva descripción: ");
-			cadenaSQL = "UPDATE Revision set Descripcion = '" + nuevaDescripcion + "' WHERE idRevision = " + idRevision
-					+ " AND Matricula_Revisiones = '" + matricula + "'";
+			cadenaSQL = "UPDATE Revision set Descripcion = '" + nuevaDescripcion + "' WHERE CodigoRevision = "
+					+ codigoRevision + " AND Matricula_Revisiones = '" + matricula + "'";
 			DaoRevision.modificarDatosRevision(cadenaSQL);
 
 			System.out.println("\nLa descripción de la revisión del coche modificada correctamente\n");
@@ -354,8 +383,8 @@ public class TallerPrincipal {
 			nuevaTipoRevision = ValidacionesEntrada.solicitarCadena("Introduce el nuevo tipo de revisión: ");
 			precioNuevo = ponerPrecioRevision(nuevaTipoRevision);
 			cadenaSQL = "UPDATE Revision set TipoRevision = '" + nuevaTipoRevision + "' , PrecioRevision = "
-					+ precioNuevo + " WHERE idRevision = " + idRevision + " AND Matricula_Revisiones = '" + matricula
-					+ "'";
+					+ precioNuevo + " WHERE CodigoRevision = " + codigoRevision + " AND Matricula_Revisiones = '"
+					+ matricula + "'";
 			DaoRevision.modificarDatosRevision(cadenaSQL);
 
 			System.out.println("\nTipo de revisión y precio de la revisión del coche modificados correctamente\n");
@@ -366,6 +395,7 @@ public class TallerPrincipal {
 
 	/**
 	 * Método para poner precio a la revisión, según el tipo de revisión elegida.
+	 * 
 	 * @param tipoRevision de revisión elegida por el usuario
 	 * @return precio
 	 */
@@ -393,9 +423,11 @@ public class TallerPrincipal {
 
 	/**
 	 * Método para tratar el menú de los coches
+	 * 
 	 * @param opcionCoche elegida por el usuario del menú
 	 * @throws ClassNotFoundException
-	 * @throws SQLException error, si las validaciones no son correctas, una opción elegida incorrecta 
+	 * @throws SQLException           error, si las validaciones no son correctas,
+	 *                                una opción elegida incorrecta
 	 */
 	private static void tratarMenuCoches(int opcionCoche) throws ClassNotFoundException, SQLException {
 
@@ -545,9 +577,11 @@ public class TallerPrincipal {
 
 	/**
 	 * Método para consultar los coches que tiene un cliente
+	 * 
 	 * @param dniCliente del cliente a buscar para ver sus coches
 	 * @param cocheDAO
-	 * @throws SQLException error, si no hay cliente con ese dni o que ese cliente no tenga aún coches.
+	 * @throws SQLException error, si no hay cliente con ese dni o que ese cliente
+	 *                      no tenga aún coches.
 	 */
 	private static void consultarCochesCliente(String dniCliente, DaoCoche cocheDAO) throws SQLException {
 
@@ -564,9 +598,11 @@ public class TallerPrincipal {
 
 	/**
 	 * Método para consultar las revisiones de un coche en concreto
+	 * 
 	 * @param matricula del coche a buscar
 	 * @param cocheDAO
-	 * @throws SQLException error, si no hay coches con esa matricula o que aún ese coche no tiene revisiones.
+	 * @throws SQLException error, si no hay coches con esa matricula o que aún ese
+	 *                      coche no tiene revisiones.
 	 */
 	private static void consultarRevisionesDeUnCoche(String matricula, DaoCoche cocheDAO) throws SQLException {
 
@@ -581,11 +617,13 @@ public class TallerPrincipal {
 		}
 
 	}
-	
+
 	/**
 	 * Método para consultar todos los coches
+	 * 
 	 * @param cocheDAO
-	 * @throws SQLException error, si no hay coches aún en la base de datos(Está vacía)
+	 * @throws SQLException error, si no hay coches aún en la base de datos(Está
+	 *                      vacía)
 	 */
 	private static void consultarTodosLosCoches(DaoCoche cocheDAO) throws SQLException {
 
@@ -603,6 +641,7 @@ public class TallerPrincipal {
 
 	/**
 	 * Método para modificar datos de un coche
+	 * 
 	 * @param matricula del coche para buscarlo y para modificar
 	 * @throws SQLException error si no hay ningún coche con esa matrícula
 	 */
@@ -648,8 +687,9 @@ public class TallerPrincipal {
 
 	/**
 	 * Método para tratar el menú de clientes
+	 * 
 	 * @param opcionCliente elegida del menú cliente
-	 * @throws ClassNotFoundException 
+	 * @throws ClassNotFoundException
 	 * @throws SQLException
 	 */
 	private static void tratarMenuCliente(int opcionCliente) throws ClassNotFoundException, SQLException {
@@ -752,6 +792,7 @@ public class TallerPrincipal {
 						confirmacion = ValidacionesEntrada
 								.solicitarConfirmacion("¿Seguro que quieres borrar el cliente?: ");
 						if (confirmacion == 'S') {
+							//DaoCoche.getCocheDao().borrarCochePorMatricula(matricula);
 							clienteDAO.borrarCliente(dni);
 							System.out.println(cadenaResultado);
 							System.out.println("\nCliente borrado correctamente.");
@@ -769,7 +810,8 @@ public class TallerPrincipal {
 
 	/**
 	 * Método para consultar los cliente que contengan unos apellidos indicados
-	 * @param apellidosCliente para buscar 
+	 * 
+	 * @param apellidosCliente para buscar
 	 * @param clienteDAO
 	 * @throws SQLException si no hay clientes con esos apellidos
 	 */
@@ -789,7 +831,8 @@ public class TallerPrincipal {
 	}
 
 	/**
-	 * Método para consultar todos los clientes 
+	 * Método para consultar todos los clientes
+	 * 
 	 * @param clienteDAO
 	 * @throws SQLException si no hay clientes aún en la base de datos(Está vacía)
 	 */
@@ -809,6 +852,7 @@ public class TallerPrincipal {
 
 	/**
 	 * Método para modificar datos de un cliente
+	 * 
 	 * @param dni del cliente a buscar que queremos modificar datos
 	 * @throws SQLException error si no encuentra cliente con el dni indicado
 	 */

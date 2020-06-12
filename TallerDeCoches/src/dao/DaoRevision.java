@@ -27,18 +27,26 @@ public class DaoRevision {
 		return daoRevision;
 	}
 
-	public void darAltaRevision(String fechaDate, String textoDescripcion, float precioRevision, String tipoRevision,
+	public void darAltaRevision(int codigoRevision, String fechaDate, String textoDescripcion, float precioRevision, String tipoRevision,
 			String matricula) throws SQLException {
 
-		try (PreparedStatement sentenciaNuevoCliente = conexion
-				.prepareStatement("INSERT INTO Revision VALUES (?, ?, ?, ?, ?)");) {
-			sentenciaNuevoCliente.setString(1, textoDescripcion);
-			sentenciaNuevoCliente.setString(2, fechaDate);
-			sentenciaNuevoCliente.setFloat(3, precioRevision);
-			sentenciaNuevoCliente.setString(4, tipoRevision);
-			sentenciaNuevoCliente.setString(5, matricula);
+		// INSERT INTO Revision (Descripcion, Fecha, PrecioRevision, TipoRevision,
+		// Matricula_Revisiones) VALUES ('sdghdfh', '19-06-2020', 80, 'ruedas',
+		// '1430-CNV');
 
-			sentenciaNuevoCliente.executeUpdate();
+		try (PreparedStatement sentenciaNuevoRevision = conexion.prepareStatement(
+				"INSERT INTO Revision (CodigoRevision, Descripcion, Fecha, PrecioRevision, TipoRevision, Matricula_Revisiones) VALUES (?, ?, ?, ?, ?, ?);");) {
+			
+			sentenciaNuevoRevision.setInt(1, codigoRevision);
+			sentenciaNuevoRevision.setString(2, textoDescripcion);
+			sentenciaNuevoRevision.setString(3, fechaDate);
+			sentenciaNuevoRevision.setFloat(4, precioRevision);
+			sentenciaNuevoRevision.setString(5, tipoRevision);
+			sentenciaNuevoRevision.setString(6, matricula);
+
+			sentenciaNuevoRevision.executeUpdate();
+
+			sentenciaNuevoRevision.close();
 		}
 
 	}
@@ -57,10 +65,11 @@ public class DaoRevision {
 		result = sentencia.executeQuery(cadenaSQL);
 
 		while (result.next()) {
-			datos.append("Revision: \n\tID: " + result.getInt("idRevision") + "\n\tDescripcion: "
+			datos.append("Revision: \n\tCodigo Revision: " + result.getInt("CodigoRevision") + "\n\tDescripcion: "
 					+ result.getString("Descripcion") + "\n\tFecha: " + result.getString("Fecha")
 					+ "\n\tPrecio Revisión: " + result.getFloat("PrecioRevision") + "\n\tTipo Revisión: "
-					+ result.getString("TipoRevision") + "\n\tMatricula: " + result.getString("Matricula_Revisiones"));
+					+ result.getString("TipoRevision") + "\n\tMatricula: " + result.getString("Matricula_Revisiones")
+					+ "\n");
 
 		}
 
@@ -73,24 +82,20 @@ public class DaoRevision {
 
 	public String consultarRevisionesDeUnCliente(String dni) throws SQLException {
 
-		String cadenaSQL = "SELECT c.DNI, co.Matricula, r.idRevision, r.Fecha ,r.Descripcion, r.PrecioRevision "
-				+ "FROM Cliente c INNER JOIN Coche co ON c.DNI = co.ClientePertenece INNER JOIN Revision r ON co.Matricula = r.Matricula_Revisiones "
-				+ "WHERE c.DNI = '" + dni + "'";
-
 		Statement sentencia;
 		ResultSet result;
-
-		sentencia = conexion.createStatement();
-		result = sentencia.executeQuery(cadenaSQL);
 		StringBuilder datos = new StringBuilder();
+
+		String cadenaSQL = "SELECT c.DNI, co.Matricula, r.CodigoRevision, r.Fecha ,r.Descripcion, r.PrecioRevision "
+				+ "FROM Cliente c INNER JOIN Coche co ON c.DNI = co.ClientePertenece INNER JOIN Revision r ON co.Matricula = r.Matricula_Revisiones "
+				+ "WHERE c.DNI = '" + dni + "'";
 
 		sentencia = conexion.createStatement();
 		result = sentencia.executeQuery(cadenaSQL);
 
 		while (result.next()) {
-
 			datos.append("Cliente: \n\tDNI: " + result.getString("DNI") + "\n\tCoche: \n\t\tMatricula: "
-					+ result.getString("Matricula") + "\n\t\tRevision con ID: " + result.getString("idRevision")
+					+ result.getString("Matricula") + "\n\t\tRevision con Codigo: " + result.getString("CodigoRevision")
 					+ "\n\t\tFecha: " + result.getString("Fecha") + "\n\t\tDescripción: "
 					+ result.getString("Descripcion") + "\n\t\tPrecio de la revisión: "
 					+ result.getFloat("PrecioRevision") + "\n");
@@ -125,12 +130,12 @@ public class DaoRevision {
 
 	}
 
-	public boolean comprobarExisteRevisionId(int idRevision) throws SQLException {
+	public boolean comprobarExisteRevisionId(int codigoRevision) throws SQLException {
 		boolean existe = false;
 		Statement sentencia;
 		ResultSet result;
 
-		String cadenaSql = "SELECT * FROM Revision WHERE idRevision = '" + idRevision + "'";
+		String cadenaSql = "SELECT * FROM Revision WHERE CodigoRevision = " + codigoRevision;
 
 		sentencia = conexion.createStatement();
 		result = sentencia.executeQuery(cadenaSql);
@@ -158,10 +163,10 @@ public class DaoRevision {
 
 	}
 
-	public void borrarRevisionPorSuId(int idRevision, String matricula) throws SQLException {
+	public void borrarRevisionPorSuCodigo(int codigoRevision, String matricula) throws SQLException {
 
 		// Preguntar si esta bien asi con el where matrícula
-		String cadenaSQL = "DELETE FROM Revision WHERE idRevision = '" + idRevision + "' AND Matricula_Revisiones = '"
+		String cadenaSQL = "DELETE FROM Revision WHERE CodigoRevision = '" + codigoRevision + "' AND Matricula_Revisiones = '"
 				+ matricula + "'";
 		Statement sentenciaBorrarRevision;
 
@@ -184,7 +189,31 @@ public class DaoRevision {
 		result = sentencia.executeQuery(cadenaSQL);
 
 		while (result.next()) {
-			datos.append("Revisión: \n\tID: " + result.getInt("idRevision") + "\n\tDescripción: "
+			datos.append("Revisión: \n\tCodigo: " + result.getInt("CodigoRevision") + "\n\tDescripción: "
+					+ result.getString("Descripcion") + "\n\tFecha: " + result.getString("Fecha")
+					+ "\n\tPrecio revisión: " + result.getFloat("PrecioRevision") + "\n\tTipo revisión: "
+					+ result.getString("TipoRevision") + "\n\tMatricula pertenece: "
+					+ result.getString("Matricula_Revisiones") + "\n");
+		}
+
+		result.close();
+		sentencia.close();
+
+		return datos.toString();
+	}
+
+	public String consultarRevisionPorCodigo(int codigoRevision, String matricula) throws SQLException {
+		
+		Statement sentencia;
+		ResultSet result;
+		StringBuilder datos = new StringBuilder();
+		String cadenaSQL = "SELECT * FROM Revision WHERE CodigoRevision = " + codigoRevision + " AND Matricula_Revisiones = '" + matricula + "'";
+		
+		sentencia = conexion.createStatement();
+		result = sentencia.executeQuery(cadenaSQL);
+
+		while (result.next()) {
+			datos.append("Revisión: \n\tCodigo: " + result.getInt("CodigoRevision") + "\n\tDescripción: "
 					+ result.getString("Descripcion") + "\n\tFecha: " + result.getString("Fecha")
 					+ "\n\tPrecio revisión: " + result.getFloat("PrecioRevision") + "\n\tTipo revisión: "
 					+ result.getString("TipoRevision") + "\n\tMatricula pertenece: "

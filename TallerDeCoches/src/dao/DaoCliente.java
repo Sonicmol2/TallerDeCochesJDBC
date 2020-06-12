@@ -25,24 +25,12 @@ public class DaoCliente {
 		return daoCliente;
 	}
 
-	/**
-	 * Método para dar de alta a un nuevo cliente
-	 * 
-	 * @param nombreCliente    del nuevo cliente
-	 * @param apellidosCliente del nuevo cliente
-	 * @param dniCliente       del nuevo cliente(¿Clave primaria?)
-	 * @throws SQLException si hay algun error a la hora de insertar el nuevo
-	 *                      cliente
-	 */
-
-	// Preguntar si tiene que devolver algo o así esta bien
 	public void nuevoCliente(String nombreCliente, String apellidosCliente, String dniCliente) throws SQLException {
 
 		PreparedStatement sentenciaNuevoCliente;
 
 		sentenciaNuevoCliente = conexion.prepareStatement("insert into Cliente values (?, ?, ?)");
 
-		// Preguntar si tiene que tener id para clave primaria y desde donde empieza
 		sentenciaNuevoCliente.setString(1, dniCliente);
 		sentenciaNuevoCliente.setString(2, apellidosCliente);
 		sentenciaNuevoCliente.setString(3, nombreCliente);
@@ -53,18 +41,7 @@ public class DaoCliente {
 
 	}
 
-	/**
-	 * Método para consultar todos los clientes que se llamen iguales
-	 * 
-	 * @param clienteDAO
-	 * 
-	 * @param nombre     de los clientes a buscar
-	 * @return una lista<String> con todos los clientes con ese nombre
-	 * @throws SQLException
-	 */
-
-	// Preguntar si devolver una lista de objetos o lista string o mostrar
-	// directamente
+	
 	public String consultarClientesPorApellidos(String apellidos) throws SQLException {
 
 		Statement sentencia;
@@ -87,15 +64,6 @@ public class DaoCliente {
 
 	}
 
-	/**
-	 * Método para consultar todos los clientes
-	 * 
-	 * @param sentencia2
-	 * @return
-	 * 
-	 * @return devuelve una lista con todos los clientes
-	 * @throws SQLException
-	 */
 	public String consultarTodosClientes() throws SQLException {
 
 		Statement sentencia;
@@ -127,13 +95,7 @@ public class DaoCliente {
 		sentenciaModificarDatosCliente.close();
 	}
 
-	/**
-	 * Método para borrar un cliente por su dni
-	 * 
-	 * @param dniCliente del cliente a buscar para borrarlo
-	 * @throws SQLException si no lo encuenntra
-	 */
-	// Preguntar si devolver el objeto cliente que ha borradp
+
 	public void borrarCliente(String dniCliente) throws SQLException {
 
 		String cadenaSQL = "DELETE FROM Cliente WHERE DNI = '" + dniCliente + "'";
@@ -147,15 +109,7 @@ public class DaoCliente {
 
 	}
 
-	/**
-	 * Métoto para buscar un cliente por su dni
-	 * 
-	 * @param dni        del cliente a buscar
-	 * @param sentencia2
-	 * @param sentencia2
-	 * @return devuelve el cliente con ese dni
-	 * @throws SQLException
-	 */
+
 	public static boolean buscarClientePorDni(String dni) throws SQLException {
 
 		boolean existe = false;
