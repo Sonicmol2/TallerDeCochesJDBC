@@ -41,7 +41,6 @@ public class DaoCliente {
 
 	}
 
-	
 	public String consultarClientesPorApellidos(String apellidos) throws SQLException {
 
 		Statement sentencia;
@@ -95,7 +94,6 @@ public class DaoCliente {
 		sentenciaModificarDatosCliente.close();
 	}
 
-
 	public void borrarCliente(String dniCliente) throws SQLException {
 
 		String cadenaSQL = "DELETE FROM Cliente WHERE DNI = '" + dniCliente + "'";
@@ -108,7 +106,6 @@ public class DaoCliente {
 		sentenciaBorrarCliente.close();
 
 	}
-
 
 	public static boolean buscarClientePorDni(String dni) throws SQLException {
 
@@ -134,6 +131,7 @@ public class DaoCliente {
 	}
 
 	public String consultarClienteDNI(String dni) throws SQLException {
+
 		StringBuilder datos = new StringBuilder();
 		Statement sentencia;
 		ResultSet result;
@@ -142,15 +140,15 @@ public class DaoCliente {
 
 		sentencia = conexion.createStatement();
 		result = sentencia.executeQuery(cadenaSql);
-		
-		while(result.next()) {
+
+		while (result.next()) {
 			datos.append("Cliente:\n\tDNI: " + result.getString("DNI") + "\n\tNombre: " + result.getString("Nombre")
-			+ "\n\tApellidos: " + result.getString("Apellidos") + "\n\n");
+					+ "\n\tApellidos: " + result.getString("Apellidos") + "\n\n");
 		}
-		
+
 		result.close();
 		sentencia.close();
-		
+
 		return datos.toString();
 	}
 

@@ -131,8 +131,6 @@ public class TallerPrincipal {
 
 				existe = DaoCliente.buscarClientePorDni(dni);
 
-				System.out.println(dni);
-
 				if (existe == false) {
 					throw new SQLException("Error. No existe cliente con ese DNI.");
 				} else {
