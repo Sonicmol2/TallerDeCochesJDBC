@@ -82,7 +82,10 @@ public class TallerPrincipal {
 	 * @throws ClassNotFoundException
 	 */
 	private static void tratarMenuRevision(int opcionRevision) throws SQLException, ClassNotFoundException {
+		
 		DaoRevision revisionDao = DaoRevision.getRevisionDao();
+		DaoCoche cocheDAO = DaoCoche.getCocheDao();
+		DaoCliente clienteDAO = DaoCliente.getClienteDao();
 		String textoDescripcion, tipoRevision, matricula, dni, fechaInicio, fechaFinal, datosRevision;
 		int codigoRevision;
 		float precioRevision;
